@@ -278,43 +278,6 @@ export default function Login() {
                 )}
               </div>
 
-              {/* Additional Options */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingTop: '8px'
-              }}>
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  cursor: 'pointer'
-                }}>
-                  <input 
-                    type="checkbox" 
-                    style={{
-                      width: '16px',
-                      height: '16px',
-                      borderRadius: '4px',
-                      accentColor: '#3b82f6'
-                    }} 
-                  />
-                  <span style={{
-                    fontSize: '14px',
-                    color: '#6b7280'
-                  }}>Remember me</span>
-                </label>
-                <a href="#" style={{
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#3b82f6',
-                  textDecoration: 'none'
-                }}>
-                  Forgot password?
-                </a>
-              </div>
-
               {/* Submit Button */}
               <button 
                 type="submit"
