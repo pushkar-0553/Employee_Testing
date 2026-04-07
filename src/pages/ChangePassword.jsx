@@ -26,7 +26,7 @@ const PasswordField = ({ label, name, value, onChange, show, onToggleShow, error
         name={name}
         value={value}
         onChange={onChange}
-        placeholder="••••••••"
+        placeholder=""
         className={`input-base${error ? ' input-error' : ''}`}
         style={{ paddingRight: '40px' }}
       />
