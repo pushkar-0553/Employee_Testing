@@ -33,7 +33,9 @@ const SectionCard = memo(({ icon: Icon, title, children }) => (
   </div>
 ));
 
-const Field = memo(({ label, name, value, onChange, error, type = 'text', required, isTextarea, placeholder, disabled }) => {
+
+const Field = memo(({ label, name, value, onChange, error, type = 'text', required, isTextarea, placeholder, disabled, maxLength }) => {
+
   const isDate = type === 'date';
 
   return (
@@ -79,6 +81,7 @@ const Field = memo(({ label, name, value, onChange, error, type = 'text', requir
           type={type} name={name} value={value}
           onChange={onChange} placeholder={placeholder}
           disabled={disabled}
+          maxLength={maxLength}
           className={`input-base${error ? ' input-error' : ''}`}
           style={{ opacity: disabled ? 0.7 : 1, background: disabled ? '#f8fafc' : '#fff', colorScheme: 'light' }}
         />
@@ -151,6 +154,7 @@ export default function EditEmployee() {
     
     if (['first_name', 'last_name', 'middle_name', 'nick_name'].includes(name)) {
         if (value !== '' && !/^[a-zA-Z\s]*$/.test(value)) return;
+        if (value.length > 50) return;
     }
 
     if (name === 'phone_number') {
@@ -341,14 +345,14 @@ export default function EditEmployee() {
 
         <SectionCard icon={HiOutlineIdentification} title="Personal Details">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-            <Field disabled={isExited} label="First Name" name="first_name" required value={form.first_name} onChange={handleChange} error={errors.first_name} />
-            <Field disabled={isExited} label="Middle Name" name="middle_name" value={form.middle_name} onChange={handleChange} error={errors.middle_name} />
-            <Field disabled={isExited} label="Last Name" name="last_name" required value={form.last_name} onChange={handleChange} error={errors.last_name} />
+            <Field disabled={isExited} label="First Name" name="first_name" required maxLength={50} value={form.first_name} onChange={handleChange} error={errors.first_name} />
+            <Field disabled={isExited} label="Middle Name" name="middle_name" maxLength={50} value={form.middle_name} onChange={handleChange} error={errors.middle_name} />
+            <Field disabled={isExited} label="Last Name" name="last_name" required maxLength={50} value={form.last_name} onChange={handleChange} error={errors.last_name} />
             
             <Field disabled={isExited} label="Phone Number" name="phone_number" required value={form.phone_number} onChange={handleChange} error={errors.phone_number} />
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <label htmlFor="blood_group" style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span>Blood Group<span style={{ color: 'var(--danger)', marginLeft: '2px' }}>*</span></span>
                 {errors.blood_group && <span style={{ fontSize: '11px', color: 'var(--danger)' }}>{errors.blood_group}</span>}
               </label>
@@ -364,8 +368,7 @@ export default function EditEmployee() {
                 {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
               </select>
             </div>
-            <Field disabled={isExited} label="Nickname" name="nick_name" value={form.nick_name} onChange={handleChange} error={errors.nick_name} />
-            
+            <Field disabled={isExited} label="Nickname" name="nick_name" maxLength={50} value={form.nick_name} onChange={handleChange} error={errors.nick_name} />
             <div style={{ gridColumn: 'span 1' }}></div>
           </div>
         </SectionCard>
