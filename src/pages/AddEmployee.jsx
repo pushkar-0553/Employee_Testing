@@ -82,7 +82,7 @@ export default function AddEmployee() {
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    
+
     // Real-time restriction: Only letters for names
     if (['first_name', 'last_name', 'middle_name', 'nick_name'].includes(name)) {
       if (value !== '' && !/^[a-zA-Z\s]*$/.test(value)) return;
@@ -112,7 +112,20 @@ export default function AddEmployee() {
   const handleImageChange = useCallback((e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 1024 * 1024) { toast.error('Image must be less than 1MB'); return; }
+
+    // Validation: Only images allowed
+    if (!file.type.startsWith('image/')) {
+      toast.error('Only image files (JPEG, PNG, etc.) are allowed');
+      e.target.value = ''; // Reset the input
+      return;
+    }
+
+    if (file.size > 1024 * 1024) { 
+      toast.error('Image must be less than 1MB'); 
+      e.target.value = ''; // Reset the input
+      return; 
+    }
+
     setImage(file);
     setImageName(file.name);
     setImagePreview(URL.createObjectURL(file));
@@ -128,7 +141,7 @@ export default function AddEmployee() {
   const validate = () => {
     const errs = {};
     const required = ['first_name', 'last_name', 'role', 'dob', 'date_of_joining', 'current_address', 'permanent_address', 'blood_group', 'phone_number'];
-    
+
     required.forEach(f => {
       if (!form[f] || String(form[f]).trim() === '') errs[f] = 'Required';
     });
@@ -146,11 +159,11 @@ export default function AddEmployee() {
       const dob = new Date(form.dob);
       const join = new Date(form.date_of_joining);
       const today = new Date();
-      
+
       let age = today.getFullYear() - dob.getFullYear();
       const m = today.getMonth() - dob.getMonth();
       if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
-      
+
       if (age < 18) errs.dob = 'Must be 18+ yrs';
       if (join <= dob) errs.date_of_joining = 'Must be after DOB';
     }
@@ -196,7 +209,7 @@ export default function AddEmployee() {
   }, [form, image, imageName, addEmployee, navigate]);
 
   return (
-    <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: '18px', paddingBottom: '32px' ,marginLeft:"50px",marginTop:"60px" }}>
+    <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: '18px', paddingBottom: '32px', marginLeft: "50px", marginTop: "60px" }}>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '20px' }}>
         <button onClick={() => navigate(-1)} style={{
@@ -223,9 +236,9 @@ export default function AddEmployee() {
             <Field label="First Name" name="first_name" required placeholder="Only letters" value={form.first_name} onChange={handleChange} error={errors.first_name} />
             <Field label="Middle Name" name="middle_name" placeholder="Optional" value={form.middle_name} onChange={handleChange} error={errors.middle_name} />
             <Field label="Last Name" name="last_name" required placeholder="Only letters" value={form.last_name} onChange={handleChange} error={errors.last_name} />
-            
+
             <Field label="Phone Number" name="phone_number" required placeholder="10 digits only" value={form.phone_number} onChange={handleChange} error={errors.phone_number} />
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
               <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span>Blood Group<span style={{ color: 'var(--danger)', marginLeft: '2px' }}>*</span></span>
@@ -239,6 +252,9 @@ export default function AddEmployee() {
                 {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
               </select>
             </div>
+            <Field label="Nickname" name="nick_name" placeholder="Optional" value={form.nick_name} onChange={handleChange} error={errors.nick_name} />
+            <div style={{ gridColumn: 'span 1' }}></div>
+
           </div>
         </SectionCard>
 
@@ -246,37 +262,34 @@ export default function AddEmployee() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
             <div style={{ gridColumn: 'span 2' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)' }}>
-    Professional Role<span style={{ color: 'var(--danger)', marginLeft: '2px' }}>*</span>
-  </label>
+                <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)' }}>
+                  Professional Role<span style={{ color: 'var(--danger)', marginLeft: '2px' }}>*</span>
+                </label>
 
-  <select
-    name="role"
-    value={form.role}
-    onChange={handleChange}
-    className={`input-base${errors.role ? ' input-error' : ''}`}
-  >
-    <option value="">Select role</option>
-    {ROLES.map(role => (
-      <option key={role} value={role}>{role}</option>
-    ))}
-  </select>
+                <select
+                  name="role"
+                  value={form.role}
+                  onChange={handleChange}
+                  className={`input-base${errors.role ? ' input-error' : ''}`}
+                >
+                  <option value="">Select role</option>
+                  {ROLES.map(role => (
+                    <option key={role} value={role}>{role}</option>
+                  ))}
+                </select>
 
-  {errors.role && (
-    <span style={{ fontSize: '11px', color: 'var(--danger)' }}>
-      {errors.role}
-    </span>
-  )}
-</div>
-            </div>
-            <Field label="Nickname" name="nick_name" placeholder="Optional" value={form.nick_name} onChange={handleChange} error={errors.nick_name} />
-            <div style={{ gridColumn: 'span 1' }}></div>
-            
-            <div className="date-field-wrapper" style={{ gridColumn: 'span 2' }}>
-                 <Field label="Date of Birth" name="dob" type="date" required value={form.dob} onChange={handleChange} error={errors.dob} />
+                {errors.role && (
+                  <span style={{ fontSize: '11px', color: 'var(--danger)' }}>
+                    {errors.role}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="date-field-wrapper" style={{ gridColumn: 'span 2' }}>
-                 <Field label="Joining Date" name="date_of_joining" type="date" required value={form.date_of_joining} onChange={handleChange} error={errors.date_of_joining} />
+              <Field label="Date of Birth" name="dob" type="date" required value={form.dob} onChange={handleChange} error={errors.dob} />
+            </div>
+            <div className="date-field-wrapper" style={{ gridColumn: 'span 2' }}>
+              <Field label="Joining Date" name="date_of_joining" type="date" required value={form.date_of_joining} onChange={handleChange} error={errors.date_of_joining} />
             </div>
           </div>
         </SectionCard>
