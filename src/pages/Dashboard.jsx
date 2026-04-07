@@ -61,13 +61,13 @@ export default function Dashboard() {
   };
 
   const statsData = [
-    { label: 'Active Employees', value: totalActive, icon: HiOutlineUserGroup, iconClass: 'blue', trend: '+12', desc: 'this month' },
-    { label: 'Departments', value: uniqueDepartments, icon: HiOutlineBriefcase, iconClass: 'orange', trend: '+2', desc: 'active teams' },
+    { label: 'Active Employees', value: totalActive, icon: HiOutlineUserGroup, iconClass: 'blue'},
+    { label: 'Departments', value: uniqueDepartments, icon: HiOutlineBriefcase, iconClass: 'orange' },
   ];
 
   return (
     
-    <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '32px',marginLeft:"50px" }}>
+    <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '32px',marginLeft:"50px", marginTop:"100px" }}>
       {/* Page Header */}
       <div style={{ marginBottom: '4px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-header)', letterSpacing: '-0.02em' }}>Dashboard</h1>
