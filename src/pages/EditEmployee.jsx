@@ -323,6 +323,9 @@ export default function EditEmployee() {
                 {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
               </select>
             </div>
+            <Field disabled={isExited} label="Nickname" name="nick_name" value={form.nick_name} onChange={handleChange} error={errors.nick_name} />
+            
+            <div style={{ gridColumn: 'span 1' }}></div>
           </div>
         </SectionCard>
 
@@ -353,9 +356,7 @@ export default function EditEmployee() {
   )}
 </div>
             </div>
-            <Field disabled={isExited} label="Nickname" name="nick_name" value={form.nick_name} onChange={handleChange} error={errors.nick_name} />
             
-            <div style={{ gridColumn: 'span 1' }}></div>
 
             <div className="date-field-wrapper" style={{ gridColumn: 'span 2' }}>
                 <Field disabled={isExited} label="Date of Birth" name="dob" type="date" required value={form.dob} onChange={handleChange} error={errors.dob} />
