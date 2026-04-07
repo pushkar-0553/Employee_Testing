@@ -198,7 +198,7 @@ export default function EmployeeList() {
               <HiOutlineSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} size={16} />
               <input
                 type="text"
-                placeholder="Search name, ID, or role..."
+                placeholder="Search name, ID, or role "
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className="input-base"
