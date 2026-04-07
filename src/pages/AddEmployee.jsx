@@ -41,7 +41,7 @@ const SectionCard = memo(({ icon: Icon, title, children }) => (
 ));
 
 // Memoized Input Field
-const Field = memo(({ label, name, value, onChange, error, type = 'text', required, isTextarea, placeholder, disabled }) => {
+const Field = memo(({ label, name, value, onChange, error, type = 'text', required, isTextarea, placeholder, disabled, maxLength }) => {
   const isDate = type === 'date';
 
   return (
@@ -86,6 +86,7 @@ const Field = memo(({ label, name, value, onChange, error, type = 'text', requir
           data-testid={name}
           type={type} name={name} value={value}
           onChange={onChange} placeholder={placeholder}
+          maxLength={maxLength}
           className={`input-base${error ? ' input-error' : ''}`}
           style={{ colorScheme: 'light' }}
         />
@@ -113,9 +114,10 @@ export default function AddEmployee() {
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
 
-    // Real-time restriction: Only letters for names
+    // Real-time restriction: Only letters for names and max 50 chars
     if (['first_name', 'last_name', 'middle_name', 'nick_name'].includes(name)) {
       if (value !== '' && !/^[a-zA-Z\s]*$/.test(value)) return;
+      if (value.length > 50) return;
     }
 
     // Real-time restriction: Only numbers for phone
@@ -272,14 +274,14 @@ export default function AddEmployee() {
 
         <SectionCard icon={HiOutlineIdentification} title="Personal Information">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-            <Field label="First Name" name="first_name" required placeholder="Only letters" value={form.first_name} onChange={handleChange} error={errors.first_name} />
-            <Field label="Middle Name" name="middle_name" placeholder="Optional" value={form.middle_name} onChange={handleChange} error={errors.middle_name} />
-            <Field label="Last Name" name="last_name" required placeholder="Only letters" value={form.last_name} onChange={handleChange} error={errors.last_name} />
+            <Field label="First Name" name="first_name" required placeholder="Max 50 characters" maxLength={50} value={form.first_name} onChange={handleChange} error={errors.first_name} />
+            <Field label="Middle Name" name="middle_name" placeholder="Max 50 characters" maxLength={50} value={form.middle_name} onChange={handleChange} error={errors.middle_name} />
+            <Field label="Last Name" name="last_name" required placeholder="Max 50 characters" maxLength={50} value={form.last_name} onChange={handleChange} error={errors.last_name} />
 
             <Field label="Phone Number" name="phone_number" required placeholder="10 digits only" value={form.phone_number} onChange={handleChange} error={errors.phone_number} />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <label htmlFor="blood_group" style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span>Blood Group<span style={{ color: 'var(--danger)', marginLeft: '2px' }}>*</span></span>
                 {errors.blood_group && <span style={{ fontSize: '11px', color: 'var(--danger)' }}>{errors.blood_group}</span>}
               </label>
@@ -293,7 +295,7 @@ export default function AddEmployee() {
                 {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
               </select>
             </div>
-            <Field label="Nickname" name="nick_name" placeholder="Optional" value={form.nick_name} onChange={handleChange} error={errors.nick_name} />
+            <Field label="Nickname" name="nick_name" placeholder="Max 50 characters" maxLength={50} value={form.nick_name} onChange={handleChange} error={errors.nick_name} />
             <div style={{ gridColumn: 'span 1' }}></div>
 
           </div>
