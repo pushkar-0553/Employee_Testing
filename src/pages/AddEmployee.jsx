@@ -8,6 +8,8 @@ import {
   HiOutlineCalendar, HiOutlineMap, HiOutlineArrowLeft,
   HiOutlineCheckCircle, HiOutlinePhone
 } from 'react-icons/hi';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -39,30 +41,58 @@ const SectionCard = memo(({ icon: Icon, title, children }) => (
 ));
 
 // Memoized Input Field
-const Field = memo(({ label, name, value, onChange, error, type = 'text', required, isTextarea, placeholder, disabled }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <span>{label}{required && <span style={{ color: 'var(--danger)', marginLeft: '2px' }}>*</span>}</span>
-      {error && <span style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: 500 }}>{error}</span>}
-    </label>
-    {isTextarea ? (
-      <textarea
-        name={name} value={value} onChange={onChange}
-        rows={3} placeholder={placeholder}
-        disabled={disabled}
-        className={`input-base${error ? ' input-error' : ''}`}
-        style={{ resize: 'none', opacity: disabled ? 0.5 : 1 }}
-      />
-    ) : (
-      <input
-        type={type} name={name} value={value}
-        onChange={onChange} placeholder={placeholder}
-        className={`input-base${error ? ' input-error' : ''}`}
-        style={{ colorScheme: 'light' }}
-      />
-    )}
-  </div>
-));
+const Field = memo(({ label, name, value, onChange, error, type = 'text', required, isTextarea, placeholder, disabled }) => {
+  const isDate = type === 'date';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+      <label htmlFor={name} style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span>{label}{required && <span style={{ color: 'var(--danger)', marginLeft: '2px' }}>*</span>}</span>
+        {error && <span style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: 500 }}>{error}</span>}
+      </label>
+      {isTextarea ? (
+        <textarea
+          id={name}
+          data-testid={name}
+          name={name} value={value} onChange={onChange}
+          rows={3} placeholder={placeholder}
+          disabled={disabled}
+          className={`input-base${error ? ' input-error' : ''}`}
+          style={{ resize: 'none', opacity: disabled ? 0.5 : 1 }}
+        />
+      ) : isDate ? (
+        <div className="datepicker-container" data-testid={`datepicker-${name}`}>
+          <DatePicker
+            id={name}
+            selected={value ? new Date(value) : null}
+            onChange={(date) => {
+              const formattedDate = date ? date.toISOString().split('T')[0] : '';
+              onChange({ target: { name, value: formattedDate } });
+            }}
+            placeholderText={placeholder || 'Select date'}
+            className={`input-base${error ? ' input-error' : ''}`}
+            autoComplete="off"
+            dateFormat="yyyy-MM-dd"
+            peekNextMonth
+            showMonthDropdown
+            showYearDropdown
+            dropdownMode="select"
+            disabled={disabled}
+          />
+        </div>
+      ) : (
+        <input
+          id={name}
+          data-testid={name}
+          type={type} name={name} value={value}
+          onChange={onChange} placeholder={placeholder}
+          className={`input-base${error ? ' input-error' : ''}`}
+          style={{ colorScheme: 'light' }}
+        />
+      )}
+    </div>
+  );
+});
 
 export default function AddEmployee() {
   const navigate = useNavigate();
@@ -155,18 +185,27 @@ export default function AddEmployee() {
       toast.error('Please upload a profile photo');
     }
 
-    if (form.dob && form.date_of_joining) {
-      const dob = new Date(form.dob);
-      const join = new Date(form.date_of_joining);
-      const today = new Date();
+ if (form.dob && form.date_of_joining) {
+  const dob = new Date(form.dob);
+  const join = new Date(form.date_of_joining);
+  const today = new Date();
 
-      let age = today.getFullYear() - dob.getFullYear();
-      const m = today.getMonth() - dob.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+  // Age calculation
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
 
-      if (age < 18) errs.dob = 'Must be 18+ yrs';
-      if (join <= dob) errs.date_of_joining = 'Must be after DOB';
-    }
+  if (age < 18) errs.dob = 'Must be 18+ yrs';
+  if (join <= dob) errs.date_of_joining = 'Must be after DOB';
+
+  // 👉 NEW CONDITION: DOJ should not be more than 2 months from today
+  const twoMonthsLater = new Date();
+  twoMonthsLater.setMonth(twoMonthsLater.getMonth() + 2);
+
+  if (join > twoMonthsLater) {
+    errs.date_of_joining = 'Joining date cannot be more than 2 months ahead';
+  }
+}
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -245,6 +284,8 @@ export default function AddEmployee() {
                 {errors.blood_group && <span style={{ fontSize: '11px', color: 'var(--danger)' }}>{errors.blood_group}</span>}
               </label>
               <select
+                id="blood_group"
+                data-testid="blood_group"
                 name="blood_group" value={form.blood_group} onChange={handleChange}
                 className={`input-base${errors.blood_group ? ' input-error' : ''}`}
               >
@@ -267,6 +308,8 @@ export default function AddEmployee() {
                 </label>
 
                 <select
+                  id="role"
+                  data-testid="role"
                   name="role"
                   value={form.role}
                   onChange={handleChange}
@@ -366,31 +409,33 @@ export default function AddEmployee() {
       )}
 
       <style>{`
-        input[type="date"]::-webkit-calendar-picker-indicator {
-          background: transparent;
-          bottom: 0;
-          color: transparent;
-          cursor: pointer;
-          height: auto;
-          left: 0;
-          position: absolute;
-          right: 0;
-          top: 0;
-          width: auto;
+        .datepicker-container {
+          width: 100%;
         }
-        .date-field-wrapper {
-          position: relative;
+        .react-datepicker-wrapper {
+          width: 100%;
         }
-        .date-field-wrapper ::after {
-          content: '📅';
-          position: absolute;
-          right: 12px;
-          top: 35px;
-          pointer-events: none;
-          font-size: 14px;
+        .react-datepicker__input-container input {
+          width: 100%;
         }
-        input[type="date"] {
-            position: relative;
+        .react-datepicker {
+           border: 1px solid var(--border);
+           border-radius: 12px;
+           box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+           font-family: inherit;
+        }
+        .react-datepicker__header {
+           background: #f8fafc;
+           border-bottom: 1px solid var(--border);
+           padding: 12px 0;
+           border-radius: 11px 11px 0 0;
+        }
+        .react-datepicker__day--selected {
+           background-color: #2563eb !important;
+           border-radius: 8px;
+        }
+        .react-datepicker__day:hover {
+           border-radius: 8px;
         }
       `}</style>
     </div>
