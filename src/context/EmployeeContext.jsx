@@ -126,6 +126,11 @@ export const EmployeeProvider = ({ children }) => {
     return { success: true };
   };
 
+  const resetPassword = () => {
+    setCredentials(prev => ({ ...prev, password: 'admin123' }));
+    return { success: true };
+  };
+
   const addEmployee = (employee) => {
     // Generate an EMP ID if it doesn't already have one (from the form)
     // Actually our form doesn't take emp_id, so we generate it here
@@ -173,6 +178,7 @@ export const EmployeeProvider = ({ children }) => {
       login,
       logout,
       changePassword,
+      resetPassword,
       addEmployee,
       updateEmployee,
       deleteEmployee,
