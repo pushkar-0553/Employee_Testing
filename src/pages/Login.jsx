@@ -10,7 +10,8 @@ export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login } = useEmployees();
+  const { login, resetPassword } = useEmployees();
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -44,6 +45,14 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResetPassword = () => {
+    resetPassword();
+    toast.success('Password has been reset to default "admin123"');
+    setShowResetConfirm(false);
+    // Update form password field to the new default for convenience (optional)
+    setForm(prev => ({ ...prev, password: 'admin123' }));
   };
 
   return (
@@ -276,6 +285,28 @@ export default function Login() {
                     {errors.password}
                   </p>
                 )}
+                
+                {/* Reset Password Button */}
+                <div style={{ textAlign: 'right' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowResetConfirm(true)}
+                    style={{
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      color: '#3b82f6',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '4px 0',
+                      transition: 'color 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.target.style.color = '#2563eb'}
+                    onMouseLeave={(e) => e.target.style.color = '#3b82f6'}
+                  >
+                    Reset Password?
+                  </button>
+                </div>
               </div>
 
               {/* Submit Button */}
@@ -370,6 +401,112 @@ export default function Login() {
           <p>Secure login powered by advanced encryption</p>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {showResetConfirm && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px',
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '20px',
+            width: '100%',
+            maxWidth: '400px',
+            padding: '32px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            textAlign: 'center',
+            transform: 'scale(1)',
+            transition: 'transform 0.3s'
+          }}>
+            <div style={{
+              width: '56px',
+              height: '56px',
+              background: '#fee2e2',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px'
+            }}>
+              <HiOutlineLockClosed size={28} style={{ color: '#ef4444' }} />
+            </div>
+            <h3 style={{
+              fontSize: '20px',
+              fontWeight: '700',
+              color: '#111827',
+              marginBottom: '12px'
+            }}>Confirm Password Reset?</h3>
+            <p style={{
+              fontSize: '14px',
+              color: '#6b7280',
+              lineHeight: '1.6',
+              marginBottom: '24px'
+            }}>
+              Your password will be reset to the default: <br/>
+              <span style={{ fontWeight: '600', color: '#3b82f6', fontFamily: 'monospace' }}>admin123</span>
+            </p>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={() => setShowResetConfirm(false)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '12px',
+                  border: '1px solid #e5e7eb',
+                  background: 'white',
+                  color: '#374151',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                onMouseLeave={(e) => e.target.style.background = 'white'}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleResetPassword}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: '#ef4444',
+                  color: 'white',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.background = '#dc2626'}
+                onMouseLeave={(e) => e.target.style.background = '#ef4444'}
+              >
+                Reset Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CSS for animation */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
     </>
   );
