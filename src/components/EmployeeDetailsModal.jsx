@@ -145,11 +145,7 @@ export default function EmployeeDetailsModal({ employee, onClose }) {
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <div style={{ padding: '20px 24px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', background: '#ffffff' }}>
-            <button onClick={onClose} className="btn-primary" style={{ minWidth: '120px' }}>Close Profile</button>
-        </div>
+       
       </div>
     </div>,
     document.body
