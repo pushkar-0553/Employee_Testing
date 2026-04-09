@@ -34,7 +34,7 @@ const SectionCard = memo(({ icon: Icon, title, children }) => (
 ));
 
 
-const Field = memo(({ label, name, value, onChange, error, type = 'text', required, isTextarea, placeholder, disabled, maxLength }) => {
+const Field = memo(({ label, name, value, onChange, error, type = 'text', required, isTextarea, placeholder, disabled, maxLength, minDate, maxDate }) => {
 
   const isDate = type === 'date';
 
@@ -59,6 +59,8 @@ const Field = memo(({ label, name, value, onChange, error, type = 'text', requir
           <DatePicker
             id={name}
             selected={value ? new Date(value) : null}
+            minDate={minDate}
+            maxDate={maxDate}
             onChange={(date) => {
               const formattedDate = date ? date.toISOString().split('T')[0] : '';
               onChange({ target: { name, value: formattedDate } });
@@ -138,8 +140,8 @@ export default function EditEmployee() {
         setImagePreview(data.profile_picture);
         setImageName(data.profile_picture_name || '');
       }
-      if (data.current_address && data.permanent_address && 
-          data.current_address.trim() === data.permanent_address.trim()) {
+      if (data.current_address && data.permanent_address &&
+        data.current_address.trim() === data.permanent_address.trim()) {
         setSameAddress(true);
       }
       setFetching(false);
@@ -151,15 +153,15 @@ export default function EditEmployee() {
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    
+
     if (['first_name', 'last_name', 'middle_name', 'nick_name'].includes(name)) {
-        if (value !== '' && !/^[a-zA-Z\s]*$/.test(value)) return;
-        if (value.length > 50) return;
+      if (value !== '' && !/^[a-zA-Z\s]*$/.test(value)) return;
+      if (value.length > 50) return;
     }
 
     if (name === 'phone_number') {
-        if (value !== '' && !/^\d*$/.test(value)) return;
-        if (value.length > 10) return;
+      if (value !== '' && !/^\d*$/.test(value)) return;
+      if (value.length > 10) return;
     }
 
     setForm(prev => {
@@ -194,7 +196,7 @@ export default function EditEmployee() {
   const validate = () => {
     const errs = {};
     const required = ['first_name', 'last_name', 'role', 'dob', 'date_of_joining', 'current_address', 'permanent_address', 'blood_group', 'phone_number'];
-    
+
     required.forEach(f => {
       if (!form[f] || String(form[f]).trim() === '') errs[f] = 'Required';
     });
@@ -203,27 +205,27 @@ export default function EditEmployee() {
       errs.phone_number = 'Exact 10 digits';
     }
 
- if (form.dob && form.date_of_joining) {
-  const dob = new Date(form.dob);
-  const join = new Date(form.date_of_joining);
-  const today = new Date();
+    if (form.dob && form.date_of_joining) {
+      const dob = new Date(form.dob);
+      const join = new Date(form.date_of_joining);
+      const today = new Date();
 
-  // Age calculation
-  let age = today.getFullYear() - dob.getFullYear();
-  const m = today.getMonth() - dob.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+      // Age calculation
+      let age = today.getFullYear() - dob.getFullYear();
+      const m = today.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
 
-  if (age < 18) errs.dob = 'Must be 18+ yrs';
-  if (join <= dob) errs.date_of_joining = 'Must be after DOB';
+      if (age < 18) errs.dob = 'Must be 18+ yrs';
+      if (join <= dob) errs.date_of_joining = 'Must be after DOB';
 
-  // 👉 NEW CONDITION: DOJ should not be more than 2 months from today
-  const twoMonthsLater = new Date();
-  twoMonthsLater.setMonth(twoMonthsLater.getMonth() + 2);
+      // 👉 NEW CONDITION: DOJ should not be more than 2 months from today
+      const twoMonthsLater = new Date();
+      twoMonthsLater.setMonth(twoMonthsLater.getMonth() + 2);
 
-  if (join > twoMonthsLater) {
-    errs.date_of_joining = 'Joining date cannot be more than 2 months ahead';
-  }
-}
+      if (join > twoMonthsLater) {
+        errs.date_of_joining = 'Joining date cannot be more than 2 months ahead';
+      }
+    }
 
     if (isExited && !form.exit_date) errs.exit_date = 'Required';
 
@@ -282,7 +284,7 @@ export default function EditEmployee() {
   }
 
   return (
-    <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: '18px', paddingBottom: '32px', marginLeft: '50px',marginTop:"80px" }}>
+    <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: '18px', paddingBottom: '32px', marginLeft: '50px', marginTop: "80px" }}>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '20px' }}>
         <button onClick={() => navigate(-1)} style={{
@@ -302,8 +304,8 @@ export default function EditEmployee() {
               {isExited ? 'Employee Details (Inactive)' : 'Edit Employee'}
             </h1>
             <span style={{
-              fontSize: '11px', fontWeight: 700, 
-              color: isExited ? '#ea580c' : '#2563eb', 
+              fontSize: '11px', fontWeight: 700,
+              color: isExited ? '#ea580c' : '#2563eb',
               background: isExited ? '#ffedd5' : '#eff6ff',
               padding: '4px 10px', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.05em',
               border: `1px solid ${isExited ? '#fed7aa' : '#dbeafe'}`
@@ -315,7 +317,7 @@ export default function EditEmployee() {
             {isExited ? 'View mode. Re-enroll from the history tab or restore below.' : 'Modify employee details with enforced data validation.'}
           </p>
         </div>
-        
+
         {isExited && (
           <button onClick={handleRestore} disabled={loading} className="btn-secondary" style={{ color: '#16a34a', borderColor: '#bbf7d0', background: '#f0fdf4' }}>
             <HiOutlineRefresh size={16} /> Restore to ACTIVE
@@ -328,15 +330,15 @@ export default function EditEmployee() {
         {isExited && (
           <SectionCard icon={HiOutlineLogout} title="Exit Logs">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-              <Field 
-                label="Exit Date" name="exit_date" type="date" required 
-                value={form.exit_date} onChange={handleChange} error={errors.exit_date} 
+              <Field
+                label="Exit Date" name="exit_date" type="date" required
+                value={form.exit_date} onChange={handleChange} error={errors.exit_date}
               />
               <div style={{ gridColumn: 'span 3' }}>
-                <Field 
-                  label="Exit Reason" name="exit_reason" isTextarea 
-                  placeholder="Reason for leaving" 
-                  value={form.exit_reason} onChange={handleChange} error={errors.exit_reason} 
+                <Field
+                  label="Exit Reason" name="exit_reason" isTextarea
+                  placeholder="Reason for leaving"
+                  value={form.exit_reason} onChange={handleChange} error={errors.exit_reason}
                 />
               </div>
             </div>
@@ -348,9 +350,9 @@ export default function EditEmployee() {
             <Field disabled={isExited} label="First Name" name="first_name" required maxLength={50} value={form.first_name} onChange={handleChange} error={errors.first_name} />
             <Field disabled={isExited} label="Middle Name" name="middle_name" maxLength={50} value={form.middle_name} onChange={handleChange} error={errors.middle_name} />
             <Field disabled={isExited} label="Last Name" name="last_name" required maxLength={50} value={form.last_name} onChange={handleChange} error={errors.last_name} />
-            
+
             <Field disabled={isExited} label="Phone Number" name="phone_number" required value={form.phone_number} onChange={handleChange} error={errors.phone_number} />
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
               <label htmlFor="blood_group" style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span>Blood Group<span style={{ color: 'var(--danger)', marginLeft: '2px' }}>*</span></span>
@@ -376,39 +378,62 @@ export default function EditEmployee() {
         <SectionCard icon={HiOutlineCalendar} title="Employment History">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
             <div style={{ gridColumn: 'span 2' }}>
-             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)' }}>
-    Professional Role<span style={{ color: 'var(--danger)', marginLeft: '2px' }}>*</span>
-  </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)' }}>
+                  Professional Role<span style={{ color: 'var(--danger)', marginLeft: '2px' }}>*</span>
+                </label>
 
-  <select
-    id="role"
-    data-testid="role"
-    name="role"
-    value={form.role}
-    onChange={handleChange}
-    className={`input-base${errors.role ? ' input-error' : ''}`}
-  >
-    <option value="">Select role</option>
-    {ROLES.map(role => (
-      <option key={role} value={role}>{role}</option>
-    ))}
-  </select>
+                <select
+                  id="role"
+                  data-testid="role"
+                  name="role"
+                  value={form.role}
+                  onChange={handleChange}
+                  className={`input-base${errors.role ? ' input-error' : ''}`}
+                >
+                  <option value="">Select role</option>
+                  {ROLES.map(role => (
+                    <option key={role} value={role}>{role}</option>
+                  ))}
+                </select>
 
-  {errors.role && (
-    <span style={{ fontSize: '11px', color: 'var(--danger)' }}>
-      {errors.role}
-    </span>
-  )}
-</div>
+                {errors.role && (
+                  <span style={{ fontSize: '11px', color: 'var(--danger)' }}>
+                    {errors.role}
+                  </span>
+                )}
+              </div>
             </div>
-            
+
 
             <div className="date-field-wrapper" style={{ gridColumn: 'span 2' }}>
-                <Field disabled={isExited} label="Date of Birth" name="dob" type="date" required value={form.dob} onChange={handleChange} error={errors.dob} />
+              <Field
+                label="Date of Birth"
+                name="dob"
+                type="date"
+                required
+                value={form.dob}
+                onChange={handleChange}
+                error={errors.dob}
+                maxDate={new Date()}   // 🔥 no future DOB
+              />
             </div>
             <div className="date-field-wrapper" style={{ gridColumn: 'span 2' }}>
-                 <Field disabled={isExited} label="Joining Date" name="date_of_joining" type="date" required value={form.date_of_joining} onChange={handleChange} error={errors.date_of_joining} />
+              <Field
+                label="Joining Date"
+                name="date_of_joining"
+                type="date"
+                required
+                value={form.date_of_joining}
+                onChange={handleChange}
+                error={errors.date_of_joining}
+                minDate={form.dob ? new Date(form.dob) : null}  // 🔥 after DOB
+                maxDate={(() => {
+                  const d = new Date();
+                  d.setMonth(d.getMonth() + 2);
+                  return d;
+                })()}  // 🔥 within 2 months
+              />
             </div>
           </div>
         </SectionCard>
@@ -434,7 +459,7 @@ export default function EditEmployee() {
               {imagePreview ? (
                 <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <img src={imagePreview} style={{ flex: 1, width: '100%', height: '180px', objectFit: 'cover', opacity: 0.8 }} alt="Profile" />
-                  <div style={{ 
+                  <div style={{
                     position: 'absolute', top: '10px', right: '10px',
                     background: 'rgba(239, 68, 68, 0.9)', color: 'white',
                     padding: '3px 8px', borderRadius: '6px', fontSize: '10px',
@@ -485,12 +510,12 @@ export default function EditEmployee() {
       </form>
 
       {showReview && (
-        <ReviewModal 
-          data={form} 
-          imagePreview={imagePreview} 
-          onConfirm={handleSubmit} 
-          onCancel={() => setShowReview(false)} 
-          isLoading={loading} 
+        <ReviewModal
+          data={form}
+          imagePreview={imagePreview}
+          onConfirm={handleSubmit}
+          onCancel={() => setShowReview(false)}
+          isLoading={loading}
         />
       )}
 
