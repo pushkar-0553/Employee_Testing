@@ -41,7 +41,7 @@ const SectionCard = memo(({ icon: Icon, title, children }) => (
 ));
 
 // Memoized Input Field
-const Field = memo(({ label, name, value, onChange, error, type = 'text', required, isTextarea, placeholder, disabled, maxLength }) => {
+const Field = memo(({ label, name, value, onChange, error, type = 'text', required, isTextarea, placeholder, disabled, maxLength, minDate, maxDate }) => {
   const isDate = type === 'date';
 
   return (
@@ -65,6 +65,8 @@ const Field = memo(({ label, name, value, onChange, error, type = 'text', requir
           <DatePicker
             id={name}
             selected={value ? new Date(value) : null}
+            minDate={minDate}
+            maxDate={maxDate}
             onChange={(date) => {
               const formattedDate = date ? date.toISOString().split('T')[0] : '';
               onChange({ target: { name, value: formattedDate } });
@@ -152,10 +154,10 @@ export default function AddEmployee() {
       return;
     }
 
-    if (file.size > 1024 * 1024) { 
-      toast.error('Image must be less than 1MB'); 
+    if (file.size > 1024 * 1024) {
+      toast.error('Image must be less than 1MB');
       e.target.value = ''; // Reset the input
-      return; 
+      return;
     }
 
     setImage(file);
@@ -187,27 +189,29 @@ export default function AddEmployee() {
       toast.error('Please upload a profile photo');
     }
 
- if (form.dob && form.date_of_joining) {
-  const dob = new Date(form.dob);
-  const join = new Date(form.date_of_joining);
-  const today = new Date();
+    if (form.dob && form.date_of_joining) {
+      const dob = new Date(form.dob);
+      const join = new Date(form.date_of_joining);
+      const today = new Date();
 
-  // Age calculation
-  let age = today.getFullYear() - dob.getFullYear();
-  const m = today.getMonth() - dob.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+      // Age calculation
+      let age = today.getFullYear() - dob.getFullYear();
+      const m = today.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
 
-  if (age < 18) errs.dob = 'Must be 18+ yrs';
-  if (join <= dob) errs.date_of_joining = 'Must be after DOB';
+      const present = new Date();
+      present.setDate(present.getDate() + 1);
+      if (present.setDate(present.getDate()) < 18) errs.dob = 'Must be 18+ yrs';
+      if (join <= dob) errs.date_of_joining = 'Must be after DOB';
 
-  // 👉 NEW CONDITION: DOJ should not be more than 2 months from today
-  const twoMonthsLater = new Date();
-  twoMonthsLater.setMonth(twoMonthsLater.getMonth() + 2);
+      // 👉 NEW CONDITION: DOJ should not be more than 2 months from today
+      const twoMonthsLater = new Date();
+      twoMonthsLater.setMonth(twoMonthsLater.getMonth() + 2);
 
-  if (join > twoMonthsLater) {
-    errs.date_of_joining = 'Joining date cannot be more than 2 months ahead';
-  }
-}
+      if (join > twoMonthsLater) {
+        errs.date_of_joining = 'Joining date cannot be more than 2 months ahead';
+      }
+    }
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -331,10 +335,33 @@ export default function AddEmployee() {
               </div>
             </div>
             <div className="date-field-wrapper" style={{ gridColumn: 'span 2' }}>
-              <Field label="Date of Birth" name="dob" type="date" required value={form.dob} onChange={handleChange} error={errors.dob} />
+              <Field
+                label="Date of Birth"
+                name="dob"
+                type="date"
+                required
+                value={form.dob}
+                onChange={handleChange}
+                error={errors.dob}
+                maxDate={new Date()}   // 🔥 no future DOB
+              />
             </div>
             <div className="date-field-wrapper" style={{ gridColumn: 'span 2' }}>
-              <Field label="Joining Date" name="date_of_joining" type="date" required value={form.date_of_joining} onChange={handleChange} error={errors.date_of_joining} />
+              <Field
+                label="Joining Date"
+                name="date_of_joining"
+                type="date"
+                required
+                value={form.date_of_joining}
+                onChange={handleChange}
+                error={errors.date_of_joining}
+                minDate={form.dob ? new Date(form.dob) : null}  // 🔥 after DOB
+                maxDate={(() => {
+                  const d = new Date();
+                  d.setMonth(d.getMonth() + 2);
+                  return d;
+                })()}  // 🔥 within 2 months
+              />
             </div>
           </div>
         </SectionCard>
