@@ -10,6 +10,7 @@ import {
 } from 'react-icons/hi';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -41,12 +42,20 @@ const SectionCard = memo(({ icon: Icon, title, children }) => (
 ));
 
 // Memoized Input Field
-const Field = memo(({ label, name, value, onChange, error, type = 'text', required, isTextarea, placeholder, disabled, maxLength, minDate, maxDate }) => {
+const Field = memo(({ label, name, value, onChange, error, type = 'text', required, isTextarea, placeholder, disabled, maxLength, minDate, maxDate, isMobile }) => {
+
   const isDate = type === 'date';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-      <label htmlFor={name} style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <label htmlFor={name} style={{ 
+        fontSize: isMobile ? '14px' : '12.5px', 
+        fontWeight: 600, 
+        color: 'var(--text-main)', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between' 
+      }}>
         <span>{label}{required && <span style={{ color: 'var(--danger)', marginLeft: '2px' }}>*</span>}</span>
         {error && <span style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: 500 }}>{error}</span>}
       </label>
@@ -58,7 +67,13 @@ const Field = memo(({ label, name, value, onChange, error, type = 'text', requir
           rows={3} placeholder={placeholder}
           disabled={disabled}
           className={`input-base${error ? ' input-error' : ''}`}
-          style={{ resize: 'none', opacity: disabled ? 0.5 : 1 }}
+          style={{ 
+            resize: 'none', 
+            opacity: disabled ? 0.5 : 1,
+            fontSize: isMobile ? '16px' : '14px',
+            padding: isMobile ? '12px 16px' : '10px 14px',
+            minHeight: isMobile ? '48px' : 'auto'
+          }}
         />
       ) : isDate ? (
         <div className="datepicker-container" data-testid={`datepicker-${name}`}>
@@ -80,6 +95,13 @@ const Field = memo(({ label, name, value, onChange, error, type = 'text', requir
             showYearDropdown
             dropdownMode="select"
             disabled={disabled}
+            customInput={<input 
+              style={{ 
+                fontSize: isMobile ? '16px' : '14px',
+                padding: isMobile ? '12px 16px' : '10px 14px',
+                height: isMobile ? '48px' : 'auto'
+              }} 
+            />}
           />
         </div>
       ) : (
@@ -90,7 +112,12 @@ const Field = memo(({ label, name, value, onChange, error, type = 'text', requir
           onChange={onChange} placeholder={placeholder}
           maxLength={maxLength}
           className={`input-base${error ? ' input-error' : ''}`}
-          style={{ colorScheme: 'light' }}
+          disabled={disabled}
+          style={{
+            fontSize: isMobile ? '16px' : '14px',
+            padding: isMobile ? '12px 16px' : '10px 14px',
+            height: isMobile ? '48px' : 'auto'
+          }}
         />
       )}
     </div>
@@ -108,6 +135,8 @@ export default function AddEmployee() {
   const [showReview, setShowReview] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sameAddress, setSameAddress] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const isTablet = useMediaQuery('(max-width: 1024px)');
 
   useEffect(() => {
     document.title = "Add Employee | Employee Management";
@@ -254,11 +283,27 @@ export default function AddEmployee() {
   }, [form, image, imageName, addEmployee, navigate]);
 
   return (
-    <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: '18px', paddingBottom: '32px', marginLeft: "50px", marginTop: "60px" }}>
+    <div className="page-enter" style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: isMobile ? '16px' : '18px', 
+      paddingBottom: '32px', 
+      marginLeft: isMobile ? '0' : '50px', 
+      marginTop: isMobile ? '0' : '60px',
+      padding: isMobile ? '16px' : '0'
+    }}>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '20px' }}>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: isMobile ? 'flex-start' : 'center', 
+        gap: '14px', 
+        marginTop: isMobile ? '0' : '20px',
+        flexDirection: isMobile ? 'column' : 'row'
+      }}>
         <button onClick={() => navigate(-1)} style={{
-          width: '36px', height: '36px', borderRadius: '9px',
+          width: isMobile ? '40px' : '36px', 
+          height: isMobile ? '40px' : '36px', 
+          borderRadius: '9px',
           background: 'white', border: '1.5px solid var(--border)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', color: 'var(--text-muted)', transition: 'all 0.15s',
@@ -266,23 +311,38 @@ export default function AddEmployee() {
           onMouseEnter={e => { e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.color = '#2563eb'; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
         >
-          <HiOutlineArrowLeft size={17} />
+          <HiOutlineArrowLeft size={isMobile ? 20 : 17} />
         </button>
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-header)', letterSpacing: '-0.02em' }}>Add New Employee</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '3px' }}>Enforcing strict validation for all fields.</p>
+          <h1 style={{ 
+            fontSize: isMobile ? '24px' : '20px', 
+            fontWeight: 800, 
+            color: 'var(--text-header)', 
+            letterSpacing: '-0.02em',
+            marginBottom: isMobile ? '8px' : '3px'
+          }}>Add New Employee</h1>
+          <p style={{ 
+            fontSize: isMobile ? '14px' : '13px', 
+            color: 'var(--text-muted)', 
+            marginTop: '3px',
+            lineHeight: isMobile ? 1.4 : 1.2
+          }}>Enforcing strict validation for all fields.</p>
         </div>
       </div>
 
       <form onSubmit={handleReview} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
         <SectionCard icon={HiOutlineIdentification} title="Personal Information">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-            <Field label="First Name" name="first_name" required placeholder="Max 50 characters" maxLength={50} value={form.first_name} onChange={handleChange} error={errors.first_name} />
-            <Field label="Middle Name" name="middle_name" placeholder="Max 50 characters" maxLength={50} value={form.middle_name} onChange={handleChange} error={errors.middle_name} />
-            <Field label="Last Name" name="last_name" required placeholder="Max 50 characters" maxLength={50} value={form.last_name} onChange={handleChange} error={errors.last_name} />
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: isMobile ? '1fr' : (isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)'), 
+            gap: isMobile ? '12px' : '16px' 
+          }}>
+            <Field label="First Name" name="first_name" required placeholder="Max 50 characters" maxLength={50} value={form.first_name} onChange={handleChange} error={errors.first_name} isMobile={isMobile} />
+            <Field label="Middle Name" name="middle_name" placeholder="Max 50 characters" maxLength={50} value={form.middle_name} onChange={handleChange} error={errors.middle_name} isMobile={isMobile} />
+            <Field label="Last Name" name="last_name" required placeholder="Max 50 characters" maxLength={50} value={form.last_name} onChange={handleChange} error={errors.last_name} isMobile={isMobile} />
 
-            <Field label="Phone Number" name="phone_number" required placeholder="10 digits only" value={form.phone_number} onChange={handleChange} error={errors.phone_number} />
+            <Field label="Phone Number" name="phone_number" required placeholder="10 digits only" value={form.phone_number} onChange={handleChange} error={errors.phone_number} isMobile={isMobile} />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
               <label htmlFor="blood_group" style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -306,8 +366,12 @@ export default function AddEmployee() {
         </SectionCard>
 
         <SectionCard icon={HiOutlineCalendar} title="Employment & Identity">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-            <div style={{ gridColumn: 'span 2' }}>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: isMobile ? '1fr' : (isTablet ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)'), 
+            gap: isMobile ? '12px' : '16px' 
+          }}>
+            <div style={{ gridColumn: isMobile ? '1' : (isTablet ? 'span 2' : 'span 2') }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                 <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)' }}>
                   Professional Role<span style={{ color: 'var(--danger)', marginLeft: '2px' }}>*</span>
@@ -334,7 +398,11 @@ export default function AddEmployee() {
                 )}
               </div>
             </div>
-            <div className="date-field-wrapper" style={{ gridColumn: 'span 2' }}>
+
+           
+
+            <div className="date-field-wrapper" style={{ gridColumn: isMobile ? '1' : (isTablet ? 'span 2' : 'span 2') }}>
+
               <Field
                 label="Date of Birth"
                 name="dob"
@@ -346,7 +414,9 @@ export default function AddEmployee() {
                 maxDate={new Date()}   // 🔥 no future DOB
               />
             </div>
-            <div className="date-field-wrapper" style={{ gridColumn: 'span 2' }}>
+
+            <div className="date-field-wrapper" style={{ gridColumn: isMobile ? '1' : (isTablet ? 'span 2' : 'span 2') }}>
+
               <Field
                 label="Joining Date"
                 name="date_of_joining"
@@ -366,7 +436,11 @@ export default function AddEmployee() {
           </div>
         </SectionCard>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '18px' }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', 
+          gap: isMobile ? '16px' : '18px' 
+        }}>
           <div className="card" style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column', border: errors.profile_image ? '1.5px solid var(--danger)' : '1px solid var(--border)' }}>
             <div className="section-header">
               <div className="section-header-icon"><HiOutlinePhotograph size={17} /></div>

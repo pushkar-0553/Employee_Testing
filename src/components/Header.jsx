@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { HiOutlineBell, HiOutlineUserCircle, HiOutlineCog, HiOutlineLogout } from 'react-icons/hi';
 import { useLocation } from 'react-router-dom';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 export default function Header() {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -8,6 +9,9 @@ export default function Header() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const initials = user.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'AU';
   const location = useLocation();
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const isTablet = useMediaQuery('(max-width: 1024px)');
+  const sidebarWidth = isMobile ? 0 : (isTablet ? 200 : 260);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -19,17 +23,18 @@ export default function Header() {
     <header style={{
       position: 'fixed',
       top: 0,
-      left: '260px',
+      left: isMobile ? 0 : sidebarWidth,
       right: 0,
-      height: '64px',
+      height: isMobile ? '60px' : '64px',
       background: 'rgba(255,255,255,0.92)',
       backdropFilter: 'blur(12px)',
       borderBottom: '1px solid #e2e8f0',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '0 28px',
+      padding: isMobile ? '0 16px' : '0 28px',
       zIndex: 40,
+      transition: 'all 0.3s ease',
     }}>
       {/* Spacer */}
       <div style={{ flex: 1 }}></div>

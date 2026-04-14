@@ -1,8 +1,11 @@
+import { useState } from 'react';
+import { HiOutlineMenu, HiOutlineX } from 'react-icons/hi';
 import { Link, useLocation } from 'react-router-dom';
 import {
   HiOutlineHome, HiOutlineUserGroup, HiOutlineUserAdd,
   HiOutlineLockClosed, HiOutlineLogout
 } from 'react-icons/hi';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: HiOutlineHome, description: 'Overview & analytics' },
@@ -13,6 +16,9 @@ const navItems = [
 
 export default function Sidebar() {
   const { pathname } = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const isTablet = useMediaQuery('(max-width: 1024px)');
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -24,18 +30,62 @@ export default function Sidebar() {
   const initials = user.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'AU';
 
   return (
-    <aside style={{
-      position: 'fixed',
-      left: 0,
-      top: 0,
-      height: '100vh',
-      width: '260px',
-      background: '#0f172a',
-      display: 'flex',
-      flexDirection: 'column',
-      zIndex: 50,
-      borderRight: '1px solid rgba(255,255,255,0.06)',
-    }}>
+    <>
+      {/* Mobile Menu Button */}
+      {isMobile && (
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          style={{
+            position: 'fixed',
+            top: '16px',
+            left: '16px',
+            zIndex: 1001,
+            width: '40px',
+            height: '40px',
+            borderRadius: '10px',
+            background: '#0f172a',
+            border: 'none',
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          }}
+        >
+          {isMobileMenuOpen ? <HiOutlineX size={20} /> : <HiOutlineMenu size={20} />}
+        </button>
+      )}
+      
+      {/* Overlay for mobile */}
+      {isMobile && isMobileMenuOpen && (
+        <div
+          onClick={() => setIsMobileMenuOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 999,
+          }}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <aside style={{
+        position: 'fixed',
+        left: 0,
+        top: 0,
+        height: '100vh',
+        width: isMobile ? (isMobileMenuOpen ? '260px' : '0') : (isTablet ? '200px' : '260px'),
+        background: '#0f172a',
+        display: 'flex',
+        flexDirection: 'column',
+        zIndex: isMobile ? 1000 : 50,
+        borderRight: '1px solid rgba(255,255,255,0.06)',
+        transform: isMobile ? (isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)',
+        transition: 'all 0.3s ease',
+        overflow: isMobile ? 'hidden' : 'visible',
+      }}>
       {/* Logo */}
       <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
@@ -111,9 +161,8 @@ export default function Sidebar() {
             <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>Sign out of account</div>
           </div>
         </button>
-
-      
       </div>
     </aside>
+    </>
   );
 }

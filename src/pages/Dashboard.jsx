@@ -7,27 +7,33 @@ import {
   HiOutlineLogout
 } from 'react-icons/hi';
 import { Link } from 'react-router-dom';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
-const StatCard = ({ label, value, icon: Icon, iconClass, trend, desc }) => (
-  <div className="card page-enter" style={{ padding: '20px 24px', transition: 'box-shadow 0.2s, transform 0.2s' }}
+const StatCard = ({ label, value, icon: Icon, iconClass, trend, desc, isMobile }) => (
+  <div className="card page-enter" style={{ 
+    padding: isMobile ? '16px 20px' : '20px 24px', 
+    transition: 'box-shadow 0.2s, transform 0.2s' 
+  }}
     onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-hover)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
     onMouseLeave={e => { e.currentTarget.style.boxShadow = 'var(--shadow-card)'; e.currentTarget.style.transform = 'none'; }}
   >
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
       <div>
         <p style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>{label}</p>
-        <h3 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-header)', lineHeight: 1, marginBottom: '10px' }}>{value}</h3>
+        <h3 style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: 800, color: 'var(--text-header)', lineHeight: 1, marginBottom: '10px' }}>{value}</h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
           <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--success)' }}>{trend}</span>
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{desc}</span>
         </div>
       </div>
       <div className={`stat-icon-${iconClass}`} style={{
-        width: '46px', height: '46px', borderRadius: '12px',
+        width: isMobile ? '40px' : '46px', 
+        height: isMobile ? '40px' : '46px', 
+        borderRadius: '12px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         flexShrink: 0,
       }}>
-        <Icon size={22} />
+        <Icon size={isMobile ? 20 : 22} />
       </div>
     </div>
   </div>
@@ -35,7 +41,9 @@ const StatCard = ({ label, value, icon: Icon, iconClass, trend, desc }) => (
 
 export default function Dashboard() {
   const { employees, deleteEmployee } = useEmployees();
-  const [loading, setLoading] = useState(false); // No longer strictly needed but kept for UI consistency
+  const [loading, setLoading] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const isTablet = useMediaQuery('(max-width: 1024px)');
 
   useEffect(() => {
     document.title = "Dashboard | Employee Management";
@@ -61,22 +69,25 @@ export default function Dashboard() {
   };
 
   const statsData = [
-    { label: 'Active Employees', value: totalActive, icon: HiOutlineUserGroup, iconClass: 'blue'},
-    { label: 'Departments', value: uniqueDepartments, icon: HiOutlineBriefcase, iconClass: 'orange' },
+    { label: 'Total Employees', value: totalActive, icon: HiOutlineUserGroup, iconClass: 'blue', trend: '+12', desc: 'this month' },
+    { label: 'Departments', value: uniqueDepartments, icon: HiOutlineBriefcase, iconClass: 'orange', trend: '+2', desc: 'active teams' },
   ];
 
   return (
-    
-    <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '32px',marginLeft:"50px", marginTop:"100px" }}>
+    <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '32px' }}>
       {/* Page Header */}
       <div style={{ marginBottom: '4px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-header)', letterSpacing: '-0.02em' }}>Dashboard</h1>
+        <h1 style={{ fontSize: isMobile ? '20px' : '22px', fontWeight: 800, color: 'var(--text-header)', letterSpacing: '-0.02em' }}>Dashboard</h1>
         <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginTop: '4px' }}>Welcome back! Here's what's happening with your team.</p>
       </div>
 
       {/* Stats Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
-        {statsData.map((stat, i) => <StatCard key={i} {...stat} />)}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: isMobile ? '1fr' : (isTablet ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)'), 
+        gap: isMobile ? '12px' : '14px' 
+      }}>
+        {statsData.map((stat, i) => <StatCard key={i} {...stat} isMobile={isMobile} />)}
       </div>
 
       {/* Quick Actions */}
@@ -85,7 +96,11 @@ export default function Dashboard() {
           <span style={{ fontSize: '16px' }}>⚡</span>
           <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-header)' }}>Quick Actions</h3>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
+          gap: '10px' 
+        }}>
           {[
             { to: '/add-employee', icon: HiOutlineUserAdd, label: 'Add New Employee', desc: 'Onboard a new team member', color: '#eff6ff', iconColor: '#2563eb' },
             { to: '/employees', icon: HiOutlineUsers, label: 'View All Employees', desc: 'Browse the full directory', color: '#ecfdf5', iconColor: '#059669' },
@@ -115,7 +130,12 @@ export default function Dashboard() {
       {/* Recent Employees Table */}
       <div className="card" style={{ overflow: 'hidden' }}>
         <div style={{
-          padding: '18px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: isMobile ? '16px 20px' : '18px 24px', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: isMobile ? 'flex-start' : 'center',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? '8px' : '0',
           borderBottom: '1px solid var(--border)',
         }}>
           <div>
@@ -133,7 +153,70 @@ export default function Dashboard() {
             <p style={{ fontSize: '13px' }}>Loading employees...</p>
           </div>
         ) : recentEmployees.length > 0 ? (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          isMobile ? (
+            // Mobile Card View
+            <div style={{ padding: '16px 20px' }}>
+              {recentEmployees.map(emp => (
+                <div key={emp.id} style={{
+                  background: 'white',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '12px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                    <div style={{
+                      width: '40px', height: '40px', borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #2563eb, #06b6d4)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'white', fontSize: '14px', fontWeight: 700, flexShrink: 0,
+                    }}>
+                      {emp.profile_picture
+                        ? <img src={emp.profile_picture} alt={emp.first_name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px' }} />
+                        : `${emp.first_name[0]}${emp.last_name[0]}`}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>
+                        {emp.first_name} {emp.last_name}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                        {emp.role}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '2px' }}>ID: {emp.employee_id}</div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>
+                        {new Date(emp.updated_at || emp.created_at || emp.date_of_joining).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <Link to={`/edit-employee/${emp.id}`} style={{
+                        width: '32px', height: '32px', borderRadius: '8px',
+                        background: '#f1f5f9', border: '1px solid #e2e8f0',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#2563eb', textDecoration: 'none',
+                      }}>
+                        <HiOutlinePencilAlt size={14} />
+                      </Link>
+                      <button onClick={() => handleMarkAsExited(emp.id)} style={{
+                        width: '32px', height: '32px', borderRadius: '8px',
+                        background: '#fef2f2', border: '1px solid #e2e8f0',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#ef4444', cursor: 'pointer',
+                      }}>
+                        <HiOutlineTrash size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            // Desktop Table View
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f8fafc' }}>
                 {['Name', 'Role', 'Employee ID', 'Last Updated', 'Actions'].map((h, i) => (
@@ -207,6 +290,7 @@ export default function Dashboard() {
               ))}
             </tbody>
           </table>
+          )
         ) : (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{
