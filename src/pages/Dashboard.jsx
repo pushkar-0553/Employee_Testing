@@ -51,7 +51,7 @@ export default function Dashboard() {
 
   const activeEmployees = (employees || []).filter(emp => emp?.status === 1);
   const totalActive = activeEmployees.length;
-  const uniqueDepartments = [...new Set(activeEmployees.map(emp => emp?.role).filter(role => role))].length;
+  const uniqueRoles = [...new Set(activeEmployees.map(emp => emp?.role).filter(role => role))].length;
 
   const recentEmployees = [...activeEmployees].sort((a, b) => {
     const dateA = new Date(a?.updated_at || a?.created_at || a?.date_of_joining || 0);
@@ -70,7 +70,7 @@ export default function Dashboard() {
 
   const statsData = [
     { label: 'Total Employees', value: totalActive, icon: HiOutlineUserGroup, iconClass: 'blue', trend: '+12', desc: 'this month' },
-    { label: 'Departments', value: uniqueDepartments, icon: HiOutlineBriefcase, iconClass: 'orange', trend: '+2', desc: 'active teams' },
+    { label: 'Roles', value: uniqueRoles, icon: HiOutlineBriefcase, iconClass: 'orange', trend: '+2', desc: 'active teams' },
   ];
 
   return (

@@ -20,6 +20,17 @@ export default function DeleteModal({ employee, onConfirm, onCancel, isLoading }
     };
   }, []);
 
+  // Close modal on ESC key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && !isLoading) {
+        onCancel();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onCancel, isLoading]);
+
   return createPortal(
     <div
       style={{

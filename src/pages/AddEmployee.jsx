@@ -11,6 +11,7 @@ import {
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { format } from 'date-fns';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -83,7 +84,7 @@ const Field = memo(({ label, name, value, onChange, error, type = 'text', requir
             minDate={minDate}
             maxDate={maxDate}
             onChange={(date) => {
-              const formattedDate = date ? date.toISOString().split('T')[0] : '';
+              const formattedDate = date ? format(date, 'yyyy-MM-dd') : '';
               onChange({ target: { name, value: formattedDate } });
             }}
             placeholderText={placeholder || 'Select date'}
@@ -126,7 +127,7 @@ const Field = memo(({ label, name, value, onChange, error, type = 'text', requir
 
 export default function AddEmployee() {
   const navigate = useNavigate();
-  const { addEmployee } = useEmployees();
+  const { addEmployee, employees } = useEmployees();
   const [form, setForm] = useState(initialForm);
   const [image, setImage] = useState(null);
   const [imageName, setImageName] = useState('');
@@ -213,29 +214,60 @@ export default function AddEmployee() {
       errs.phone_number = 'Exact 10 digits';
     }
 
-    if (!image) {
-      errs.profile_image = 'Profile photo is required';
-      toast.error('Please upload a profile photo');
+    // Check for duplicate phone number
+    if (form.phone_number && employees?.some(emp => emp.phone_number === form.phone_number && emp.status === 1)) {
+      errs.phone_number = 'Phone number already exists';
     }
 
-    if (form.dob && form.date_of_joining) {
+    if (!image) {
+      errs.profile_image = 'Profile photo is required';
+    }
+
+    if (form.dob) {
       const dob = new Date(form.dob);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      dob.setHours(0, 0, 0, 0);
+
+      // DOB should be before today
+      if (dob >= today) {
+        errs.dob = 'Date of birth must be in the past';
+      } else {
+        // Age calculation - must be 18+
+        let age = today.getFullYear() - dob.getFullYear();
+        const m = today.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+        
+        if (age < 18) {
+          errs.dob = 'Must be 18+ years old';
+        }
+      }
+    }
+
+    if (form.date_of_joining) {
       const join = new Date(form.date_of_joining);
       const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      join.setHours(0, 0, 0, 0);
 
-      // Age calculation
-      let age = today.getFullYear() - dob.getFullYear();
-      const m = today.getMonth() - dob.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+      // DOJ should not be in the past
+      if (join < today) {
+        errs.date_of_joining = 'Joining date cannot be in the past';
+      }
 
-      const present = new Date();
-      present.setDate(present.getDate() + 1);
-      if (present.setDate(present.getDate()) < 18) errs.dob = 'Must be 18+ yrs';
-      if (join <= dob) errs.date_of_joining = 'Must be after DOB';
+      // DOJ should be after DOB
+      if (form.dob) {
+        const dob = new Date(form.dob);
+        dob.setHours(0, 0, 0, 0);
+        if (join <= dob) {
+          errs.date_of_joining = 'Must be after date of birth';
+        }
+      }
 
-      // 👉 NEW CONDITION: DOJ should not be more than 2 months from today
+      // DOJ should not be more than 2 months from today
       const twoMonthsLater = new Date();
       twoMonthsLater.setMonth(twoMonthsLater.getMonth() + 2);
+      twoMonthsLater.setHours(23, 59, 59, 999);
 
       if (join > twoMonthsLater) {
         errs.date_of_joining = 'Joining date cannot be more than 2 months ahead';
@@ -243,6 +275,32 @@ export default function AddEmployee() {
     }
 
     setErrors(errs);
+    
+    // Scroll to first invalid field
+    if (Object.keys(errs).length > 0) {
+      const firstErrorField = Object.keys(errs)[0];
+      let element;
+      
+      if (firstErrorField === 'profile_image') {
+        element = document.getElementById('profile-upload');
+      } else {
+        element = document.getElementById(firstErrorField);
+      }
+      
+      if (element) {
+        element.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'nearest'
+        });
+        
+        // Focus on input if it's an input field
+        if (element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA') {
+          element.focus();
+        }
+      }
+    }
+    
     return Object.keys(errs).length === 0;
   };
 
@@ -271,8 +329,17 @@ export default function AddEmployee() {
         updated_at: new Date().toISOString(),
       };
 
+      // Prevent toast spam
+      toast.dismiss();
       addEmployee(employeeData);
       toast.success('Employee created successfully');
+      // Reset form
+      setForm(initialForm);
+      setImage(null);
+      setImageName('');
+      setImagePreview(null);
+      setSameAddress(false);
+      setErrors({});
       navigate('/employees');
     } catch (err) {
       toast.error('Failed to add employee');
@@ -511,7 +578,7 @@ export default function AddEmployee() {
         />
       )}
 
-      <style>{`
+      <style jsx>{`
         .datepicker-container {
           width: 100%;
         }
@@ -539,6 +606,20 @@ export default function AddEmployee() {
         }
         .react-datepicker__day:hover {
            border-radius: 8px;
+        }
+        .react-datepicker__day--outside-month {
+          color: #cbd5e1;
+          pointer-events: none;
+        }
+        .react-datepicker__month {
+          min-height: 280px;
+          height: 280px;
+        }
+        .react-datepicker__week {
+          min-height: 40px;
+        }
+        .react-datepicker__day {
+          min-height: 32px;
         }
       `}</style>
     </div>

@@ -1,5 +1,6 @@
 import Sidebar from './Sidebar';
 import Header from './Header';
+import RouteProtection from './RouteProtection';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
 export default function MainLayout({ children }) {
@@ -9,6 +10,7 @@ export default function MainLayout({ children }) {
   
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 antialiased">
+      <RouteProtection />
       <Sidebar />
       <div style={{ 
         marginLeft: isMobile ? 0 : sidebarWidth,

@@ -100,7 +100,7 @@ export default function EmployeeDetailsModal({ employee, onClose }) {
           </Section>
 
           <Section icon={HiOutlineCalendar} title="Employment Info">
-            <DataField label="Designation" value={employee?.role} />
+            <DataField label="Role" value={employee?.role} />
             <DataField label="Employee ID" value={employee?.emp_id ? `#${employee.emp_id}` : '—'} />
             <DataField label="Joining Date" value={formatDate(employee?.date_of_joining)} />
             <DataField label="Current Status" value={

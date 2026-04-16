@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { HiOutlineMenu, HiOutlineX } from 'react-icons/hi';
 import { Link, useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import {
   HiOutlineHome, HiOutlineUserGroup, HiOutlineUserAdd,
-  HiOutlineLockClosed, HiOutlineLogout
+  HiOutlineLockClosed, HiOutlineLogout, HiOutlineMenu, HiOutlineX
 } from 'react-icons/hi';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
@@ -21,9 +21,25 @@ export default function Sidebar() {
   const isTablet = useMediaQuery('(max-width: 1024px)');
 
   const handleLogout = () => {
+    // Clear session storage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    window.location.href = '/login';
+    
+    // Show success toast
+    toast.success('Logged out successfully', {
+      style: {
+        background: 'var(--success)',
+        color: 'white',
+        border: '1px solid var(--success)'
+      }
+    });
+    
+    // Clear history and redirect
+    setTimeout(() => {
+      // Clear all history entries
+      window.history.replaceState(null, null, '/login');
+      window.location.href = '/login';
+    }, 1000);
   };
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');

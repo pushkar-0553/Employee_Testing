@@ -73,7 +73,7 @@ const EmployeeRow = memo(({ emp, activeTab, onSelect, onEdit, onExit, onRestore 
     <td style={{ padding: '14px 20px' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#334155' }}>{emp?.role}</span>
-        <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Department Dept.</span>
+        <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Role</span>
       </div>
     </td>
     <td style={{ padding: '14px 20px' }}>
@@ -170,6 +170,8 @@ export default function EmployeeList() {
 
   const handleMarkAsExited = useCallback((data) => {
     if (!exitTarget) return;
+    // Prevent toast spam
+    toast.dismiss();
     deleteEmployee(exitTarget.id, data);
     toast.success('Employee moved to History');
     setExitTarget(null);
@@ -177,6 +179,8 @@ export default function EmployeeList() {
 
   const handleRestore = useCallback((id) => {
     if (!window.confirm('Restore this employee to ACTIVE status?')) return;
+    // Prevent toast spam
+    toast.dismiss();
     restoreEmployee(id);
     toast.success('Employee restored successfully');
   }, [restoreEmployee]);
@@ -305,9 +309,20 @@ export default function EmployeeList() {
               </div>
             ) : paginatedEmployees.length === 0 ? (
               <div style={{ padding: '40px 0', textAlign: 'center' }}>
-                <div style={{ color: '#cbd5e1', marginBottom: '12px' }}><HiOutlineSearch size={40} /></div>
-                <p style={{ color: '#0f172a', fontWeight: 700, fontSize: '15px' }}>No records found</p>
-                <p style={{ color: '#64748b', fontSize: '13px' }}>Try adjusting your search or filters.</p>
+                <div style={{ color: '#cbd5e1', marginBottom: '12px' }}>
+                  {search ? <HiOutlineSearch size={40} /> : <HiOutlineUsers size={40} />}
+                </div>
+                <p style={{ color: '#0f172a', fontWeight: 700, fontSize: '15px', marginBottom: '8px' }}>
+                  {search ? 'No matching employees found' : 'No employees yet'}
+                </p>
+                <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '20px' }}>
+                  {search ? 'Try adjusting your search or filters.' : 'Get started by adding your first team member.'}
+                </p>
+                {!search && activeTab === 'ACTIVE' && (
+                  <Link to="/add-employee" className="btn-primary" style={{ textDecoration: 'none' }}>
+                    <HiOutlinePlus size={16} /> Add First Employee
+                  </Link>
+                )}
               </div>
             ) : (
               paginatedEmployees.map((emp) => (
@@ -461,7 +476,7 @@ export default function EmployeeList() {
             <thead>
               <tr>
                 <th style={headerStyle}>Employee Info</th>
-                <th style={headerStyle}>Designation</th>
+                <th style={headerStyle}>Role</th>
                 <th style={headerStyle}>{activeTab === 'ACTIVE' ? 'Joined On' : 'Status & Logs'}</th>
                 <th style={{ ...headerStyle, textAlign: 'right' }}>Actions</th>
               </tr>
@@ -477,9 +492,20 @@ export default function EmployeeList() {
               ) : paginatedEmployees.length === 0 ? (
                 <tr>
                   <td colSpan={4} style={{ padding: '80px 0', textAlign: 'center' }}>
-                    <div style={{ color: '#cbd5e1', marginBottom: '12px' }}><HiOutlineSearch size={40} /></div>
-                    <p style={{ color: '#0f172a', fontWeight: 700, fontSize: '15px' }}>No records found</p>
-                    <p style={{ color: '#64748b', fontSize: '13px' }}>Try adjusting your search or filters.</p>
+                    <div style={{ color: '#cbd5e1', marginBottom: '12px' }}>
+                      {search ? <HiOutlineSearch size={40} /> : <HiOutlineUsers size={40} />}
+                    </div>
+                    <p style={{ color: '#0f172a', fontWeight: 700, fontSize: '15px', marginBottom: '8px' }}>
+                      {search ? 'No matching employees found' : 'No employees yet'}
+                    </p>
+                    <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '20px' }}>
+                      {search ? 'Try adjusting your search or filters.' : 'Get started by adding your first team member.'}
+                    </p>
+                    {!search && activeTab === 'ACTIVE' && (
+                      <Link to="/add-employee" className="btn-primary" style={{ textDecoration: 'none' }}>
+                        <HiOutlinePlus size={16} /> Add First Employee
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ) : paginatedEmployees.map((emp) => (

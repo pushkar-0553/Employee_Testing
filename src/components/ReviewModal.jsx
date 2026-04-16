@@ -11,6 +11,17 @@ export default function ReviewModal({ data, imagePreview, onConfirm, onCancel, i
       document.body.style.overflow = 'auto';
     };
   }, []);
+
+  // Close modal on ESC key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && !isLoading) {
+        onCancel();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onCancel, isLoading]);
   useEffect(() => {
   document.title = "Review | Employee Management";
 }, []);
