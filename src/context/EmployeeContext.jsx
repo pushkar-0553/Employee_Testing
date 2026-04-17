@@ -64,37 +64,42 @@ export const EmployeeProvider = ({ children }) => {
     return storage.get(STORAGE_KEYS.ADMIN_CREDENTIALS, DEFAULT_CREDENTIALS);
   });
 
-  useEffect(() => {
-    storage.set(STORAGE_KEYS.EMPLOYEES, employees);
-  }, [employees]);
+  // Removed useEffect-based localStorage sync to prevent timing issues
+  // localStorage is now updated synchronously within state updates
 
-  useEffect(() => {
-    if (user) {
-      storage.set(STORAGE_KEYS.USER, user);
-    } else {
-      storage.remove(STORAGE_KEYS.USER);
-      storage.remove(STORAGE_KEYS.TOKEN);
-    }
-  }, [user]);
+  // Removed useEffect-based localStorage sync to prevent timing issues
+  // User data is now handled synchronously within login/logout functions
 
-  // Persist credentials to localStorage whenever they change
-  useEffect(() => {
-    storage.set(STORAGE_KEYS.ADMIN_CREDENTIALS, credentials);
-  }, [credentials]);
+  // Removed useEffect-based localStorage sync to prevent timing issues
+  // Credentials are now handled synchronously within changePassword function
 
   const login = (email, password) => {
     // Check against the stored credentials (not hardcoded)
     if (email === credentials.email && password === credentials.password) {
       const mockUser = { id: 'admin', email, name: credentials.name };
-      setUser(mockUser);
+      
+      // Update localStorage synchronously before state update
+      storage.set(STORAGE_KEYS.USER, mockUser);
       storage.set(STORAGE_KEYS.TOKEN, 'mock-jwt-token');
+      
+      // Then update state
+      setUser(mockUser);
+      
+      console.log('Login: User data saved to localStorage:', storage.get(STORAGE_KEYS.USER));
       return { success: true };
     }
     return { success: false, message: 'Invalid credentials' };
   };
 
   const logout = () => {
+    // Clear localStorage synchronously before state update
+    storage.remove(STORAGE_KEYS.USER);
+    storage.remove(STORAGE_KEYS.TOKEN);
+    
+    // Then update state
     setUser(null);
+    
+    console.log('Logout: User data cleared from localStorage');
   };
 
   const changePassword = (currentPassword, newPassword) => {
@@ -102,28 +107,50 @@ export const EmployeeProvider = ({ children }) => {
     if (currentPassword !== credentials.password) {
       return { success: false, message: 'Current password is incorrect' };
     }
-    // Update the credentials in state (triggers localStorage save via useEffect)
-    setCredentials(prev => ({ ...prev, password: newPassword }));
-    // Log the user out so they re-authenticate with the new password
+    
+    // Update localStorage synchronously
+    const updatedCredentials = { ...credentials, password: newPassword };
+    storage.set(STORAGE_KEYS.ADMIN_CREDENTIALS, updatedCredentials);
+    
+    // Then update state
+    setCredentials(updatedCredentials);
+    
+    // Clear user session
+    storage.remove(STORAGE_KEYS.USER);
+    storage.remove(STORAGE_KEYS.TOKEN);
     setUser(null);
+    
+    console.log('Password updated and user logged out');
     return { success: true };
   };
 
   const resetPassword = () => {
-    setCredentials(prev => ({ ...prev, password: 'admin123' }));
+    // Update localStorage synchronously
+    const updatedCredentials = { ...credentials, password: 'admin123' };
+    storage.set(STORAGE_KEYS.ADMIN_CREDENTIALS, updatedCredentials);
+    
+    // Then update state
+    setCredentials(updatedCredentials);
+    
+    console.log('Password reset to default');
     return { success: true };
   };
 
   const addEmployee = (employee) => {
     return new Promise((resolve, reject) => {
+      console.log('addEmployee called with:', employee);
+      
       // Validate employee data before processing
       const validation = validateEmployeeData(employee);
       if (!validation.isValid) {
+        console.error('Employee validation failed:', validation.errors);
         reject(new Error(validation.errors.join(', ')));
         return;
       }
 
       setEmployees(prev => {
+        console.log('Current employees in state:', prev.length);
+        
         // Generate an EMP ID if it doesn't already have one (from the form)
         const lastEmp = prev.length > 0 ? prev[prev.length - 1] : null;
         let nextIdNumber = 1;
@@ -141,52 +168,120 @@ export const EmployeeProvider = ({ children }) => {
         };
         
         const updated = [...prev, newEmployee];
-        // Ensure localStorage is updated synchronously using storage utility
-        storage.set(STORAGE_KEYS.EMPLOYEES, updated);
+        console.log('Updated employees array:', updated.length);
         
-        resolve(newEmployee);
+        // Ensure localStorage is updated synchronously using storage utility
+        const storageResult = storage.set(STORAGE_KEYS.EMPLOYEES, updated);
+        console.log('localStorage write result:', storageResult);
+        
+        // Verify localStorage was actually updated
+        const storedData = storage.get(STORAGE_KEYS.EMPLOYEES);
+        console.log('Verification - employees in localStorage:', storedData?.length);
+        
+        if (storedData && storedData.length === updated.length) {
+          console.log('✅ localStorage successfully updated with new employee');
+          resolve(newEmployee);
+        } else {
+          console.error('❌ localStorage verification failed');
+          reject(new Error('Failed to save employee to localStorage'));
+        }
+        
         return updated;
       });
     });
   };
 
   const updateEmployee = (id, updatedData) => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      console.log('updateEmployee called for ID:', id, 'with data:', updatedData);
+      
       setEmployees(prev => {
         const updated = prev.map(emp => 
           emp.id === id ? { ...emp, ...updatedData, updated_at: new Date().toISOString() } : emp
         );
+        
+        console.log('Updated employee count:', updated.filter(emp => emp.id === id).length);
+        
         // Ensure localStorage is updated synchronously using storage utility
-        storage.set(STORAGE_KEYS.EMPLOYEES, updated);
-        resolve(updated.find(emp => emp.id === id));
+        const storageResult = storage.set(STORAGE_KEYS.EMPLOYEES, updated);
+        console.log('localStorage write result:', storageResult);
+        
+        // Verify localStorage was actually updated
+        const storedData = storage.get(STORAGE_KEYS.EMPLOYEES);
+        const updatedEmployee = storedData?.find(emp => emp.id === id);
+        
+        if (updatedEmployee) {
+          console.log('✅ Employee successfully updated in localStorage');
+          resolve(updatedEmployee);
+        } else {
+          console.error('❌ Failed to update employee in localStorage');
+          reject(new Error('Failed to update employee'));
+        }
+        
         return updated;
       });
     });
   };
 
   const deleteEmployee = (id, exitData) => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      console.log('deleteEmployee called for ID:', id, 'with exit data:', exitData);
+      
       setEmployees(prev => {
         const updated = prev.map(emp => 
           emp.id === id ? { ...emp, status: 0, exit_date: new Date().toISOString().split('T')[0], ...exitData, updated_at: new Date().toISOString() } : emp
         );
+        
+        console.log('Employee marked as deleted');
+        
         // Ensure localStorage is updated synchronously using storage utility
-        storage.set(STORAGE_KEYS.EMPLOYEES, updated);
-        resolve(updated.find(emp => emp.id === id));
+        const storageResult = storage.set(STORAGE_KEYS.EMPLOYEES, updated);
+        console.log('localStorage write result:', storageResult);
+        
+        // Verify localStorage was actually updated
+        const storedData = storage.get(STORAGE_KEYS.EMPLOYEES);
+        const deletedEmployee = storedData?.find(emp => emp.id === id && emp.status === 0);
+        
+        if (deletedEmployee) {
+          console.log('✅ Employee successfully marked as deleted in localStorage');
+          resolve(deletedEmployee);
+        } else {
+          console.error('❌ Failed to mark employee as deleted in localStorage');
+          reject(new Error('Failed to delete employee'));
+        }
+        
         return updated;
       });
     });
   };
 
   const restoreEmployee = (id) => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      console.log('restoreEmployee called for ID:', id);
+      
       setEmployees(prev => {
         const updated = prev.map(emp => 
           emp.id === id ? { ...emp, status: 1, exit_date: undefined, reason: undefined, updated_at: new Date().toISOString() } : emp
         );
+        
+        console.log('Employee marked as restored');
+        
         // Ensure localStorage is updated synchronously using storage utility
-        storage.set(STORAGE_KEYS.EMPLOYEES, updated);
-        resolve(updated.find(emp => emp.id === id));
+        const storageResult = storage.set(STORAGE_KEYS.EMPLOYEES, updated);
+        console.log('localStorage write result:', storageResult);
+        
+        // Verify localStorage was actually updated
+        const storedData = storage.get(STORAGE_KEYS.EMPLOYEES);
+        const restoredEmployee = storedData?.find(emp => emp.id === id && emp.status === 1);
+        
+        if (restoredEmployee) {
+          console.log('✅ Employee successfully restored in localStorage');
+          resolve(restoredEmployee);
+        } else {
+          console.error('❌ Failed to restore employee in localStorage');
+          reject(new Error('Failed to restore employee'));
+        }
+        
         return updated;
       });
     });

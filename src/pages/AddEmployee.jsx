@@ -337,10 +337,27 @@ export default function AddEmployee() {
       // Prevent toast spam
       toast.dismiss();
       
-      // Wait for addEmployee to complete and ensure localStorage is updated
-      await addEmployee(employeeData);
-      
-      toast.success('Employee created successfully');
+      try {
+        // Wait for addEmployee to complete and ensure localStorage is updated
+        const result = await addEmployee(employeeData);
+        
+        // Verify employee was actually saved to localStorage
+        const storedEmployees = JSON.parse(localStorage.getItem('employees') || '[]');
+        const savedEmployee = storedEmployees.find(emp => emp.id === result.id);
+        
+        if (savedEmployee) {
+          console.log('✅ Employee verified in localStorage:', savedEmployee.first_name);
+          toast.success('Employee created successfully');
+        } else {
+          console.error('❌ Employee not found in localStorage after save');
+          toast.error('Failed to save employee data');
+          return;
+        }
+      } catch (error) {
+        console.error('❌ Error during employee creation:', error);
+        toast.error('Failed to add employee');
+        return;
+      }
       
       // Reset form after successful save
       setForm(initialForm);
