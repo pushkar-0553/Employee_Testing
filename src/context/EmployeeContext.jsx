@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { storage, STORAGE_KEYS, validateEmployeeData } from '../utils/storageUtils';
+import { storage, STORAGE_KEYS, validateEmployeeData, checkLocalStorageIntegrity, preventLocalStorageReset } from '../utils/storageUtils';
 
 const EmployeeContext = createContext();
 
@@ -51,8 +51,36 @@ const INITIAL_DATA = [
 ];
 
 export const EmployeeProvider = ({ children }) => {
+  // Initialize employees state with lazy initialization to prevent reload issues
   const [employees, setEmployees] = useState(() => {
-    return storage.get(STORAGE_KEYS.EMPLOYEES, INITIAL_DATA);
+    console.log('🔄 EmployeeProvider: Initializing employees from localStorage');
+    console.log('🌐 Browser context:', {
+      userAgent: navigator.userAgent,
+      isIncognito: !!(window.chrome && window.chrome.webstore),
+      localStorageAvailable: typeof Storage !== 'undefined'
+    });
+    
+    // Check localStorage integrity before initialization
+    const integrityCheck = checkLocalStorageIntegrity(STORAGE_KEYS.EMPLOYEES);
+    
+    if (integrityCheck.exists && integrityCheck.isValid) {
+      console.log('📦 Found valid existing data in localStorage, using it');
+      console.log('📊 EmployeeProvider: Loaded employees from localStorage:', integrityCheck.data?.length || 0);
+      
+      // Set up protection against localStorage reset during automation
+      const restoreProtection = preventLocalStorageReset(STORAGE_KEYS.EMPLOYEES);
+      
+      // Store restore function for cleanup
+      window.restoreLocalStorageProtection = restoreProtection;
+      
+      return integrityCheck.data;
+    } else {
+      console.log('🆕 No valid data in localStorage, using INITIAL_DATA');
+      if (integrityCheck.error) {
+        console.error('❌ localStorage integrity error:', integrityCheck.error);
+      }
+      return INITIAL_DATA;
+    }
   });
 
   const [user, setUser] = useState(() => {
@@ -162,10 +190,16 @@ export const EmployeeProvider = ({ children }) => {
 
         const newEmployee = {
           ...employee,
-          id: Date.now(),
+          id: crypto.randomUUID(), // Use crypto.randomUUID() to avoid collisions in fast automation
           emp_id: employee.emp_id || emp_id,
           status: 1, // Default to Active
         };
+        
+        console.log('🆕 Created new employee:', {
+          id: newEmployee.id,
+          emp_id: newEmployee.emp_id,
+          name: `${newEmployee.first_name} ${newEmployee.last_name}`
+        });
         
         const updated = [...prev, newEmployee];
         console.log('Updated employees array:', updated.length);

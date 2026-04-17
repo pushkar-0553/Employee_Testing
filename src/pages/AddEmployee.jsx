@@ -310,9 +310,17 @@ export default function AddEmployee() {
   const handleSubmit = useCallback(async () => {
     if (loading) return;
     
+    console.log('🚀 handleSubmit called');
+    console.log('📋 Form data before submission:', {
+      ...form,
+      hasImage: !!image,
+      imageName: imageName
+    });
+    
     setLoading(true);
     try {
       if (!image) {
+        console.error('❌ No image provided');
         setErrors(prev => ({ ...prev, profile_image: 'Profile photo is required' }));
         setLoading(false);
         return;
@@ -321,7 +329,10 @@ export default function AddEmployee() {
       // Convert image to base64
       const profile_picture = await new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
+        reader.onload = (e) => {
+          console.log('🖼️ Image converted to base64, length:', e.target.result?.length);
+          resolve(e.target.result);
+        };
         reader.readAsDataURL(image);
       });
 
@@ -333,6 +344,12 @@ export default function AddEmployee() {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
+      
+      console.log('📦 Complete employee data to be saved:', {
+        ...employeeData,
+        profile_picture_length: profile_picture?.length,
+        profile_picture_name: imageName
+      });
 
       // Prevent toast spam
       toast.dismiss();
