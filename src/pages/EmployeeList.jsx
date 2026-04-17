@@ -168,21 +168,37 @@ export default function EmployeeList() {
     document.title = (activeTab === 'ACTIVE' ? 'Working Employees' : 'Employee History') + ' | Employee Management';
   }, [activeTab]);
 
-  const handleMarkAsExited = useCallback((data) => {
+  const handleMarkAsExited = useCallback(async (data) => {
     if (!exitTarget) return;
-    // Prevent toast spam
-    toast.dismiss();
-    deleteEmployee(exitTarget.id, data);
-    toast.success('Employee moved to History');
-    setExitTarget(null);
+    
+    try {
+      // Prevent toast spam
+      toast.dismiss();
+      
+      // Wait for deleteEmployee to complete
+      await deleteEmployee(exitTarget.id, data);
+      
+      toast.success('Employee moved to History');
+      setExitTarget(null);
+    } catch (error) {
+      toast.error('Failed to move employee to History');
+    }
   }, [exitTarget, deleteEmployee]);
 
-  const handleRestore = useCallback((id) => {
+  const handleRestore = useCallback(async (id) => {
     if (!window.confirm('Restore this employee to ACTIVE status?')) return;
-    // Prevent toast spam
-    toast.dismiss();
-    restoreEmployee(id);
-    toast.success('Employee restored successfully');
+    
+    try {
+      // Prevent toast spam
+      toast.dismiss();
+      
+      // Wait for restoreEmployee to complete
+      await restoreEmployee(id);
+      
+      toast.success('Employee restored successfully');
+    } catch (error) {
+      toast.error('Failed to restore employee');
+    }
   }, [restoreEmployee]);
 
   const handleSelect = useCallback((emp) => setSelectedEmployee(emp), []);

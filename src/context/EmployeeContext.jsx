@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { storage, STORAGE_KEYS, validateEmployeeData } from '../utils/storageUtils';
 
 const EmployeeContext = createContext();
 
@@ -51,52 +52,34 @@ const INITIAL_DATA = [
 
 export const EmployeeProvider = ({ children }) => {
   const [employees, setEmployees] = useState(() => {
-    try {
-      const saved = localStorage.getItem('employees');
-      return saved ? JSON.parse(saved) : INITIAL_DATA;
-    } catch (e) {
-      console.error('Error parsing employees from localStorage', e);
-      return INITIAL_DATA;
-    }
+    return storage.get(STORAGE_KEYS.EMPLOYEES, INITIAL_DATA);
   });
 
   const [user, setUser] = useState(() => {
-    try {
-      const savedUser = localStorage.getItem('user');
-      return savedUser ? JSON.parse(savedUser) : null;
-    } catch (e) {
-      console.error('Error parsing user from localStorage', e);
-      return null;
-    }
+    return storage.get(STORAGE_KEYS.USER, null);
   });
 
   // Store credentials in state + localStorage (same pattern as employees)
   const [credentials, setCredentials] = useState(() => {
-    try {
-      const savedCreds = localStorage.getItem('admin_credentials');
-      return savedCreds ? JSON.parse(savedCreds) : DEFAULT_CREDENTIALS;
-    } catch (e) {
-      console.error('Error parsing credentials from localStorage', e);
-      return DEFAULT_CREDENTIALS;
-    }
+    return storage.get(STORAGE_KEYS.ADMIN_CREDENTIALS, DEFAULT_CREDENTIALS);
   });
 
   useEffect(() => {
-    localStorage.setItem('employees', JSON.stringify(employees));
+    storage.set(STORAGE_KEYS.EMPLOYEES, employees);
   }, [employees]);
 
   useEffect(() => {
     if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
+      storage.set(STORAGE_KEYS.USER, user);
     } else {
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
+      storage.remove(STORAGE_KEYS.USER);
+      storage.remove(STORAGE_KEYS.TOKEN);
     }
   }, [user]);
 
   // Persist credentials to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('admin_credentials', JSON.stringify(credentials));
+    storage.set(STORAGE_KEYS.ADMIN_CREDENTIALS, credentials);
   }, [credentials]);
 
   const login = (email, password) => {
@@ -104,7 +87,7 @@ export const EmployeeProvider = ({ children }) => {
     if (email === credentials.email && password === credentials.password) {
       const mockUser = { id: 'admin', email, name: credentials.name };
       setUser(mockUser);
-      localStorage.setItem('token', 'mock-jwt-token');
+      storage.set(STORAGE_KEYS.TOKEN, 'mock-jwt-token');
       return { success: true };
     }
     return { success: false, message: 'Invalid credentials' };
@@ -132,42 +115,81 @@ export const EmployeeProvider = ({ children }) => {
   };
 
   const addEmployee = (employee) => {
-    // Generate an EMP ID if it doesn't already have one (from the form)
-    // Actually our form doesn't take emp_id, so we generate it here
-    const lastEmp = employees.length > 0 ? employees[employees.length - 1] : null;
-    let nextIdNumber = 1;
-    if (lastEmp && lastEmp.emp_id) {
-      const match = lastEmp.emp_id.match(/EMP(\d+)/);
-      if (match) nextIdNumber = parseInt(match[1]) + 1;
-    }
-    const emp_id = `EMP${String(nextIdNumber).padStart(3, '0')}`;
+    return new Promise((resolve, reject) => {
+      // Validate employee data before processing
+      const validation = validateEmployeeData(employee);
+      if (!validation.isValid) {
+        reject(new Error(validation.errors.join(', ')));
+        return;
+      }
 
-    const newEmployee = {
-      ...employee,
-      id: Date.now(),
-      emp_id: employee.emp_id || emp_id,
-      status: 1, // Default to Active
-    };
-    setEmployees(prev => [...prev, newEmployee]);
-    return newEmployee;
+      setEmployees(prev => {
+        // Generate an EMP ID if it doesn't already have one (from the form)
+        const lastEmp = prev.length > 0 ? prev[prev.length - 1] : null;
+        let nextIdNumber = 1;
+        if (lastEmp && lastEmp.emp_id) {
+          const match = lastEmp.emp_id.match(/EMP(\d+)/);
+          if (match) nextIdNumber = parseInt(match[1]) + 1;
+        }
+        const emp_id = `EMP${String(nextIdNumber).padStart(3, '0')}`;
+
+        const newEmployee = {
+          ...employee,
+          id: Date.now(),
+          emp_id: employee.emp_id || emp_id,
+          status: 1, // Default to Active
+        };
+        
+        const updated = [...prev, newEmployee];
+        // Ensure localStorage is updated synchronously using storage utility
+        storage.set(STORAGE_KEYS.EMPLOYEES, updated);
+        
+        resolve(newEmployee);
+        return updated;
+      });
+    });
   };
 
   const updateEmployee = (id, updatedData) => {
-    setEmployees(prev => prev.map(emp => 
-      emp.id === id ? { ...emp, ...updatedData } : emp
-    ));
+    return new Promise((resolve) => {
+      setEmployees(prev => {
+        const updated = prev.map(emp => 
+          emp.id === id ? { ...emp, ...updatedData, updated_at: new Date().toISOString() } : emp
+        );
+        // Ensure localStorage is updated synchronously using storage utility
+        storage.set(STORAGE_KEYS.EMPLOYEES, updated);
+        resolve(updated.find(emp => emp.id === id));
+        return updated;
+      });
+    });
   };
 
   const deleteEmployee = (id, exitData) => {
-    setEmployees(prev => prev.map(emp => 
-      emp.id === id ? { ...emp, status: 0, ...exitData } : emp
-    ));
+    return new Promise((resolve) => {
+      setEmployees(prev => {
+        const updated = prev.map(emp => 
+          emp.id === id ? { ...emp, status: 0, exit_date: new Date().toISOString().split('T')[0], ...exitData, updated_at: new Date().toISOString() } : emp
+        );
+        // Ensure localStorage is updated synchronously using storage utility
+        storage.set(STORAGE_KEYS.EMPLOYEES, updated);
+        resolve(updated.find(emp => emp.id === id));
+        return updated;
+      });
+    });
   };
 
   const restoreEmployee = (id) => {
-    setEmployees(prev => prev.map(emp => 
-      emp.id === id ? { ...emp, status: 1, exit_date: undefined, reason: undefined } : emp
-    ));
+    return new Promise((resolve) => {
+      setEmployees(prev => {
+        const updated = prev.map(emp => 
+          emp.id === id ? { ...emp, status: 1, exit_date: undefined, reason: undefined, updated_at: new Date().toISOString() } : emp
+        );
+        // Ensure localStorage is updated synchronously using storage utility
+        storage.set(STORAGE_KEYS.EMPLOYEES, updated);
+        resolve(updated.find(emp => emp.id === id));
+        return updated;
+      });
+    });
   };
 
   return (

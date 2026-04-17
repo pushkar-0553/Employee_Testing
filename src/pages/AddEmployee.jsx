@@ -229,19 +229,11 @@ export default function AddEmployee() {
       today.setHours(0, 0, 0, 0);
       dob.setHours(0, 0, 0, 0);
 
-      // DOB should be before today
-      if (dob >= today) {
-        errs.dob = 'Date of birth must be in the past';
-      } else {
-        // Age calculation - must be 18+
-        let age = today.getFullYear() - dob.getFullYear();
-        const m = today.getMonth() - dob.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
-        
-        if (age < 18) {
-          errs.dob = 'Must be 18+ years old';
-        }
+      // DOB should not be in the future (today and past dates allowed)
+      if (dob > today) {
+        errs.dob = 'Date of birth cannot be in the future';
       }
+      // No age restriction - any past date is allowed
     }
 
     if (form.date_of_joining) {
@@ -304,42 +296,61 @@ export default function AddEmployee() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleReview = (e) => {
+  const handleReview = async (e) => {
     e.preventDefault();
-    if (validate()) setShowReview(true);
+    
+    // Prevent multiple submissions
+    if (loading) return;
+    
+    if (validate()) {
+      setShowReview(true);
+    }
   };
 
   const handleSubmit = useCallback(async () => {
+    if (loading) return;
+    
     setLoading(true);
     try {
-      let profile_picture = null;
-      if (image) {
-        profile_picture = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(image);
-        });
+      if (!image) {
+        setErrors(prev => ({ ...prev, profile_image: 'Profile photo is required' }));
+        setLoading(false);
+        return;
       }
+
+      // Convert image to base64
+      const profile_picture = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(image);
+      });
 
       const employeeData = {
         ...form,
         profile_picture,
         profile_picture_name: imageName,
+        phone_number: form.phone_number, // Ensure phone_number is included
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
 
       // Prevent toast spam
       toast.dismiss();
-      addEmployee(employeeData);
+      
+      // Wait for addEmployee to complete and ensure localStorage is updated
+      await addEmployee(employeeData);
+      
       toast.success('Employee created successfully');
-      // Reset form
+      
+      // Reset form after successful save
       setForm(initialForm);
       setImage(null);
       setImageName('');
       setImagePreview(null);
       setSameAddress(false);
       setErrors({});
+      
+      // Navigate after ensuring data is saved
       navigate('/employees');
     } catch (err) {
       toast.error('Failed to add employee');
